@@ -1,4 +1,5 @@
-const userServices = require("../../services/users");
+const { UserServices } = require("../../services/users");
+const { clientConnections } = require("../../constants");
 
 class UserController {
   static async signupUser(req, res) {
@@ -10,7 +11,7 @@ class UserController {
           message: "email, phone, password and username are all required",
         });
       }
-      const user = await userServices.confirmUserIsUnique(
+      const user = await UserServices.confirmUserIsUnique(
         email,
         username,
         phone
@@ -22,7 +23,7 @@ class UserController {
           message: "user already exists",
         });
       }
-      const info = await userServices.createUser(
+      const info = await UserServices.createUser(
         email,
         username,
         phone,
@@ -42,23 +43,42 @@ class UserController {
     }
   }
 
+  static async fetchAllUsersInAGroup(req, res) {
+    try {
+      if (!req.query.groupId) {
+        return res.status(422).json({
+          success: false,
+          error: "groupId query param is required",
+        });
+      }
+      const users = await UserServices.fetchUsersFromGroup(req.query.groupId);
+      return res.status(200).json({
+        success: true,
+        users,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error.message || "An error occureds",
+      });
+    }
+  }
+
   static async connectClient(req, res) {
     try {
+      const { userId } = req.query;
       const headers = {
         "Content-Type": "text/event-stream",
         Connection: "keep-alive",
         "Cache-Control": "no-cache",
       };
-      const { userId } = req.query;
-        // res.writeHead(200, headers);
-        // res.write(`Client ${userId} has connected`);
-        const resClone = {...res}
-      await userServices.createUserConn(userId, resClone);
-      console.log("I'M OK");
-      //   request.on("close", async () => {
-      //     await userServices.dropUserConn(userId);
-      //     console.log(`client ${userId} has disconnnected`);
-      //   });
+      clientConnections[userId] = res;
+      console.log(`Client ${userId} has connected`);
+      res.writeHead(200, headers);
+      req.on("close", () => {
+        delete clientConnections[userId];
+        console.log(`client ${userId} has disconnnected`);
+      });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
     }
@@ -66,7 +86,31 @@ class UserController {
 
   static async loginUser(req, res) {
     try {
-    } catch (error) {}
+      const { identity, password } = req.body;
+      if (!identity || !password) {
+        return res.status(422).json({
+          success: false,
+          message: "identity & password are required",
+        });
+      }
+      const user = await UserServices.loginUser(identity, password);
+
+      if (!JSON.parse(user).length) {
+        return res.status(401).json({
+          success: false,
+          message: "wrong credentials supplied",
+        });
+      }
+      return res.status(200).json({
+        success: true,
+        data: {
+          identity,
+          id: JSON.parse(user)[0].user_id,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
   }
 }
 

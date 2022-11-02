@@ -2,23 +2,21 @@ const axios = require("axios");
 const SqlQueries = require("./sql");
 const BaseServices = require("../");
 
-class UserServices extends BaseServices {
-  static createUser(email, username, phone, password, avatar) {
+class MessageServices extends BaseServices {
+  static sendMessage(messageText, receiverId, groupId, senderId) {
     let data = JSON.stringify({
       operation: "insert",
       schema: "chati",
-      table: "users",
+      table: "messages",
       records: [
         {
-          email,
-          username,
-          phone,
-          avatar,
-          password,
+          text: messageText,
+          receiver_id: receiverId,
+          group_id: groupId,
+          sender_id: senderId,
         },
       ],
     });
-
     let config = this.getConfig(data);
     if (!config) {
       throw {
@@ -26,21 +24,20 @@ class UserServices extends BaseServices {
         message: "invalid harperDb credentials",
       };
     }
-
     return new Promise(async (resolve, reject) => {
       try {
         const response = await axios(config);
-        resolve(JSON.stringify(response.data));
+        resolve(response.data);
       } catch (error) {
         reject(error);
       }
     });
   }
 
-  static confirmUserIsUnique(email, username, phone) {
+  static fetchMessagesBtwnUsers(senderId, receiverId, limit, page) {
     let data = JSON.stringify({
       operation: "sql",
-      sql: SqlQueries.GET_A_USER(email, username, phone),
+      sql: SqlQueries.GET_MSGS_BTWN_2_USERS(senderId, receiverId, limit, page),
     });
 
     let config = this.getConfig(data);
@@ -54,17 +51,17 @@ class UserServices extends BaseServices {
     return new Promise(async (resolve, reject) => {
       try {
         const response = await axios(config);
-        resolve(JSON.stringify(response.data));
+        resolve(response.data);
       } catch (error) {
         reject(error);
       }
     });
   }
 
-  static fetchUsersFromGroup(groupId) {
+  static fetchMessagesInAGroup(groupId, limit, page) {
     let data = JSON.stringify({
       operation: "sql",
-      sql: SqlQueries.GET_USERS_IN_A_GROUP(groupId),
+      sql: SqlQueries.GET_MSGS_IN_A_GROUP(groupId, limit, page),
     });
 
     let config = this.getConfig(data);
@@ -78,17 +75,29 @@ class UserServices extends BaseServices {
     return new Promise(async (resolve, reject) => {
       try {
         const response = await axios(config);
-        resolve(JSON.stringify(response.data));
+        resolve(response.data);
       } catch (error) {
         reject(error);
       }
     });
   }
 
-  static loginUser(identity, password) {
+  static searchMesageBetweenUsers(
+    queryTerm,
+    senderId,
+    receiverId,
+    limit,
+    page
+  ) {
     let data = JSON.stringify({
       operation: "sql",
-      sql: SqlQueries.CHECK_A_USER_CREDENTIALS(identity, password),
+      sql: SqlQueries.SEARCH_MESSAGES_BTWN_USERS(
+        queryTerm,
+        senderId,
+        receiverId,
+        limit,
+        page
+      ),
     });
 
     let config = this.getConfig(data);
@@ -102,7 +111,36 @@ class UserServices extends BaseServices {
     return new Promise(async (resolve, reject) => {
       try {
         const response = await axios(config);
-        resolve(JSON.stringify(response.data));
+        resolve(response.data);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  static searchMesagesInAGroup(queryTerm, groupId, limit, page) {
+    let data = JSON.stringify({
+      operation: "sql",
+      sql: SqlQueries.SEARCH_MESSAGES_IN_A_GROUP(
+        queryTerm,
+        groupId,
+        limit,
+        page
+      ),
+    });
+
+    let config = this.getConfig(data);
+    if (!config) {
+      throw {
+        success: false,
+        message: "invalid harperDb credentials",
+      };
+    }
+
+    return new Promise(async (resolve, reject) => {
+      try {
+        const response = await axios(config);
+        resolve(response.data);
       } catch (error) {
         reject(error);
       }
@@ -111,5 +149,5 @@ class UserServices extends BaseServices {
 }
 
 module.exports = {
-  UserServices,
+  MessageServices,
 };

@@ -1,4 +1,4 @@
-const groupServices = require("../../services/groups");
+const { GroupServices } = require("../../services/groups");
 
 class GroupController {
   static async createGroup(req, res) {
@@ -14,21 +14,51 @@ class GroupController {
           .json({ success: false, error: "description of group is required" });
       }
       const group = await groupServices.confirmGroupIsUnique(req.body.name);
-      if (JSON.parse(group).length) {
+      if (group.length) {
         return res.status(409).json({
           success: false,
-          message: "user already exists",
+          message: "group with that name already exists",
         });
       }
-      console.log("THE GROUP IS >>>>> ", group);
+      return res.status(201).json({
+        success: false,
+        message: "Group successfully created",
+        data: group,
+      });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
     }
   }
 
-  static async fetchUsersFromGroup(req, res) {
+  static async fetchAllGroupsOfAUser(req, res) {
     try {
-    } catch (error) {}
+      const groups = GroupServices.fetchAllGroupsOfAUser(req.key);
+      return res.status(200).json({ success: true, groups });
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ success: false, error: error.message || "An error occurred" });
+    }
+  }
+
+  static async userJoinGroup(req, res) {
+    try {
+      if (!req.query.groupId) {
+        return res.status(422).json({
+          success: false,
+          message: "The groupId query param is required",
+        });
+      }
+
+      await GroupServices.addUserToGroup(req.key, req.query.groupId);
+      return res
+        .status(200)
+        .json({ success: true, message: "user successfully added to group" });
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ success: false, error: error.message || "An error occured" });
+    }
   }
 }
 

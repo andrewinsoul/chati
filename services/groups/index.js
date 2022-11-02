@@ -1,85 +1,93 @@
-const axios = require('axios');
-const SqlQueries = require('../../constants/sql');
+const axios = require("axios");
+const SqlQueries = require("./sql");
+const BaseServices = require("../");
 
-
-const createGroup = (name, group_pic, description) => {
-  const dbUrl = process.env.HARPERDB_URL;
-  const dbPw = process.env.HARPERDB_PW;
-  if (!dbUrl || !dbPw) return null;
-
-  let data = JSON.stringify({
-    operation: 'insert',
-    schema: 'chati',
-    table: 'groups',
-    records: [
-      {
-        name,
-        group_pic,
-        description,
-      },
-    ],
-  });
-
-  let config = {
-    method: 'post',
-    url: dbUrl,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Basic ${dbPw}`,
-    },
-    data: data,
-  };
-
-  return new Promise(async (resolve, reject) => {
-    try {
-        const response = await axios(config)
-        resolve(JSON.stringify(response.data));
-
-    } catch (error) {
-        reject(error);
-    }
-  });
-}
-
-const confirmGroupIsUnique = (name) => {
-  const dbUrl = process.env.HARPERDB_URL;
-  const dbPw = process.env.HARPERDB_PW;
-  if (!dbUrl || !dbPw) return null;
-
-  let data = JSON.stringify({
-    operation: "sql",
-    sql: SqlQueries.GET_A_GROUP(name),
-  });
-
-  let config = {
-    method: "post",
-    url: dbUrl,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Basic ${dbPw}`,
-    },
-    data: data,
-  };
-
-  return new Promise(async (resolve, reject) => {
-    try {
-      const response = await axios(config);
-      resolve(JSON.stringify(response.data));
-    } catch (error) {
-      reject(error);
-    }
-  });
-};
-
-const addUserToGroup = (userId, groupId) => {
-    const dbUrl = process.env.HARPERDB_URL;
-    const dbPw = process.env.HARPERDB_PW;
-    if (!dbUrl || !dbPw) return null;
-  
+class GroupServices extends BaseServices {
+  static createGroup(name, group_pic, description) {
     let data = JSON.stringify({
-      operation: 'insert',
-      schema: 'chati',
-      table: 'user_groups',
+      operation: "insert",
+      schema: "chati",
+      table: "groups",
+      records: [
+        {
+          name,
+          group_pic,
+          description,
+        },
+      ],
+    });
+
+    let config = this.getConfig(data);
+    if (!config) {
+      throw {
+        success: false,
+        message: "invalid harperDb credentials",
+      };
+    }
+
+    return new Promise(async (resolve, reject) => {
+      try {
+        const response = await axios(config);
+        resolve(JSON.stringify(response.data));
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  static confirmGroupIsUnique(name) {
+    let data = JSON.stringify({
+      operation: "sql",
+      sql: SqlQueries.GET_A_GROUP_BY_NAME(name),
+    });
+
+    let config = this.getConfig(data);
+    if (!config) {
+      throw {
+        success: false,
+        message: "invalid harperDb credentials",
+      };
+    }
+
+    return new Promise(async (resolve, reject) => {
+      try {
+        const response = await axios(config);
+        resolve(response.data);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  static fetchAllGroupsOfAUser(userId) {
+    let data = JSON.stringify({
+      operation: "sql",
+      sql: SqlQueries.GET_ALL_GROUPS_OF_A_USER(userId),
+    });
+
+    let config = this.getConfig(data);
+    if (!config) {
+      throw {
+        success: false,
+        message: "invalid harperDb credentials",
+      };
+    }
+
+    return new Promise(async (resolve, reject) => {
+      try {
+        const response = await axios(config);
+        resolve(response.data);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  static addUserToGroup(userId, groupId) {
+    let data = JSON.stringify({
+      operation: "insert",
+      schema: "chati",
+      table: "user_groups",
       records: [
         {
           user_id: userId,
@@ -87,26 +95,22 @@ const addUserToGroup = (userId, groupId) => {
         },
       ],
     });
-  
-    let config = {
-      method: 'post',
-      url: dbUrl,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Basic ${dbPw}`,
-      },
-      data: data,
-    };
-  
+    let config = this.getConfig(data);
+    if (!config) {
+      throw {
+        success: false,
+        message: "invalid harperDb credentials",
+      };
+    }
     return new Promise(async (resolve, reject) => {
       try {
-          const response = await axios(config)
-          resolve(JSON.stringify(response.data));
-  
+        const response = await axios(config);
+        resolve(JSON.stringify(response.data));
       } catch (error) {
-          reject(error);
+        reject(error);
       }
     });
   }
+}
 
-module.exports = {createGroup, addUserToGroup, confirmGroupIsUnique};
+module.exports = { GroupServices };
