@@ -85,7 +85,6 @@ class UserController {
   }
 
   static async loginUser(req, res) {
-    console.log("<><> ", res.write);
     try {
       const { identity, password } = req.body;
       if (!identity || !password) {
