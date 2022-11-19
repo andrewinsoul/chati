@@ -42,16 +42,16 @@ class MessageController {
   static async fetchLatestMessages(req, res) {
     try {
       const { key } = req;
-      const { receiverId, limit, page } = req.query;
-      if (!receiverId) {
+      const { clientId, limit, page } = req.query;
+      if (!clientId) {
         return res.status(400).json({
           success: false,
-          message: "receiverId is required",
+          message: "clientId is required",
         });
       }
       const messages = await MessageServices.fetchMessagesBtwnUsers(
         key,
-        receiverId,
+        clientId,
         limit || 20,
         page || 1
       );
@@ -66,7 +66,6 @@ class MessageController {
 
   static async fetchLatestMessagesInGroup(req, res) {
     try {
-      const { key } = req;
       const { groupId, limit, page } = req.query;
       if (!groupId) {
         return res.status(400).json({

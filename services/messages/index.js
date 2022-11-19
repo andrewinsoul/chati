@@ -34,10 +34,10 @@ class MessageServices extends BaseServices {
     });
   }
 
-  static fetchMessagesBtwnUsers(senderId, receiverId, limit, page) {
+  static fetchMessagesBtwnUsers(senderId, clientId, limit, page) {
     let data = JSON.stringify({
       operation: "sql",
-      sql: SqlQueries.GET_MSGS_BTWN_2_USERS(senderId, receiverId, limit, page),
+      sql: SqlQueries.GET_MSGS_BTWN_2_USERS(senderId, clientId, limit, page),
     });
 
     let config = this.getConfig(data);
